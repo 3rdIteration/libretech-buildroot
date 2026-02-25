@@ -1,0 +1,52 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      defconfig:
+        description: 'defconfig to build (relative to configs/)'
+        required: false
+        default: 'librecomputer/aml-s805x-ac/efi-btrfs_defconfig'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            bc \
+            build-essential \
+            cpio \
+            file \
+            libncurses-dev \
+            libssl-dev \
+            rsync \
+            unzip \
+            wget
+
+      - name: Configure
+        # For push/pull_request events inputs are not set, so fall back to the default defconfig.
+        run: |
+          DEFCONFIG="${{ github.event.inputs.defconfig }}"
+          make "${DEFCONFIG:-librecomputer/aml-s805x-ac/efi-btrfs_defconfig}"
+
+      - name: Build
+        run: make
+
+      - name: Upload images
+        uses: actions/upload-artifact@v4
+        with:
+          name: images
+          path: output/images/
