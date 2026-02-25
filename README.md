@@ -71,3 +71,39 @@ the overlay directories under board/librecomputer holds overlays profiles to sup
 ### project
 
 the project directory is recommended for storing external submodules or repos for referencing
+
+## output
+
+After a successful build (locally or via GitHub Actions), the image files are placed in `output/images/`.
+
+The primary output is **`sdcard.img`** — a ready-to-flash disk image that contains:
+
+* a bootloader partition (written before the partition table)
+* a FAT32 boot partition with the EFI stub, U-Boot script, and Linux kernel (`Image`)
+* a Btrfs root filesystem partition
+
+### Download from GitHub Actions
+
+1. Open the [Actions tab](../../actions/workflows/build.yml) and select the completed workflow run.
+2. Scroll to the **Artifacts** section at the bottom of the run summary.
+3. Download the **images** artifact and unzip it — you will find `sdcard.img` inside.
+
+### Flash to a microSD card
+
+Replace `/dev/sdX` with the actual device node of your microSD card (check with `lsblk`).
+
+**Linux / macOS:**
+
+```bash
+sudo dd if=sdcard.img of=/dev/sdX bs=4M conv=fsync status=progress
+```
+
+> **Warning:** double-check the target device before running `dd` — writing to the wrong device will destroy its data.
+
+**Windows:** use [balenaEtcher](https://etcher.balena.io/) or [Raspberry Pi Imager](https://www.raspberrypi.com/software/) and select `sdcard.img` as the source image.
+
+### Boot the board
+
+1. Insert the flashed microSD card into your Libre Computer board.
+2. Power on the board.
+3. The system will boot automatically via U-Boot → EFI → Linux.
