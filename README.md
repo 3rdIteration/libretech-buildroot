@@ -80,7 +80,7 @@ After a successful build (locally or via GitHub Actions), the image files are pl
 
 | File | Description |
 |------|-------------|
-| `sdcard.img` | **The only file you need.** Complete, ready-to-flash disk image. Flash this to a microSD card to run the system. |
+| `sdcard.img` | **The only file you need.** Complete, ready-to-flash disk image. Flash this to a USB stick to run the system. |
 | `boot.vfat` | FAT32 boot partition image. Intermediate artifact embedded inside `sdcard.img`; no need to use it directly. |
 | `rootfs.btrfs` | Btrfs root filesystem image. Intermediate artifact embedded inside `sdcard.img`; no need to use it directly. |
 | `Image` | Compiled Linux kernel (AArch64). Stored inside `boot.vfat` → `sdcard.img` as `EFI/boot/BOOTAA64.EFI`. |
@@ -100,9 +100,9 @@ The primary output is **`sdcard.img`** — a ready-to-flash disk image that cont
 2. Scroll to the **Artifacts** section at the bottom of the run summary.
 3. Download the **images** artifact and unzip it — you will find `sdcard.img` inside.
 
-### Flash to a microSD card
+### Flash to a USB stick
 
-Replace `/dev/sdX` with the actual device node of your microSD card (check with `lsblk`).
+Replace `/dev/sdX` with the actual device node of your USB stick (check with `lsblk`).
 
 **Linux / macOS:**
 
@@ -116,6 +116,7 @@ sudo dd if=sdcard.img of=/dev/sdX bs=4M conv=fsync status=progress
 
 ### Boot the board
 
-1. Insert the flashed microSD card into your Libre Computer board.
+1. Insert the flashed USB stick into your Libre Computer board.
+   * On the **aml-s805x-ac (La Frite)**: use the USB port **furthest from the IR receiver**.
 2. Power on the board.
 3. The system will boot automatically via U-Boot → EFI → Linux.
