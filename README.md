@@ -76,6 +76,18 @@ the project directory is recommended for storing external submodules or repos fo
 
 After a successful build (locally or via GitHub Actions), the image files are placed in `output/images/`.
 
+### Output files
+
+| File | Description |
+|------|-------------|
+| `sdcard.img` | **The only file you need.** Complete, ready-to-flash disk image. Flash this to a microSD card to run the system. |
+| `boot.vfat` | FAT32 boot partition image. Intermediate artifact embedded inside `sdcard.img`; no need to use it directly. |
+| `rootfs.btrfs` | Btrfs root filesystem image. Intermediate artifact embedded inside `sdcard.img`; no need to use it directly. |
+| `Image` | Compiled Linux kernel (AArch64). Stored inside `boot.vfat` → `sdcard.img` as `EFI/boot/BOOTAA64.EFI`. |
+| `boot.scr` | Compiled U-Boot boot script (binary form of `board/librecomputer/genimage/efi-btrfs/boot.cmd`). Stored inside `boot.vfat` → `sdcard.img`. |
+| `boot.ini` | U-Boot environment file that configures the boot method. Stored inside `boot.vfat` → `sdcard.img`. |
+| `<board-name>` | Board-specific bootloader binary downloaded from `boot.libre.computer`. Written directly into `sdcard.img` before the partition table at the correct sector offset for the board. |
+
 The primary output is **`sdcard.img`** — a ready-to-flash disk image that contains:
 
 * a bootloader partition (written before the partition table)
