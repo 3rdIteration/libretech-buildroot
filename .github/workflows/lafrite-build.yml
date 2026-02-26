@@ -1,0 +1,49 @@
+name: 'Build La Frite USB Image'
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libssl-dev \
+            bc \
+            cpio \
+            file \
+            rsync \
+            unzip \
+            wget \
+            libncurses-dev \
+            python3
+
+      - name: Configure Buildroot for La Frite
+        run: make lafrite_defconfig
+
+      - name: Build USB flash drive image
+        run: make -j$(nproc)
+        timeout-minutes: 120
+
+      - name: Upload USB image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lafrite-usb-image
+          path: output/images/usb.img
+          if-no-files-found: error
