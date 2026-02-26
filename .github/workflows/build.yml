@@ -45,6 +45,32 @@ jobs:
       - name: Build
         run: make
 
+      - name: Verify kernel config
+        run: |
+          cfg=output/build/linux-custom/.config
+          failed=0
+          for opt in \
+            CONFIG_USB \
+            CONFIG_USB_DWC2 \
+            CONFIG_PHY_MESON_GXL_USB2 \
+            CONFIG_USB_STORAGE \
+            CONFIG_BTRFS_FS \
+            CONFIG_CMDLINE_EXTEND; do
+            if grep -q "^${opt}=y" "$cfg"; then
+              echo "OK: ${opt}=y"
+            else
+              echo "FAIL: ${opt} is NOT built-in (expected =y):"
+              grep "${opt}" "$cfg" || echo "  (not set at all)"
+              failed=1
+            fi
+          done
+          if [ "$failed" -eq 1 ]; then
+            echo ""
+            echo "One or more critical kernel options were silently downgraded from =y."
+            echo "The resulting image will not boot from USB."
+            exit 1
+          fi
+
       - name: Upload images
         uses: actions/upload-artifact@v4
         with:
