@@ -12,17 +12,28 @@ defconfigs can be considered the functional end of a composition of profiles.
 
 Also see the [original buildroot README](README).
 
+## aml-s805x-ac (La Frite)
+
+This project is the newer, composable successor to the [`lafrite_defconfig`](board/librecomputer/lafrite/readme.txt) guide. It targets the same Libre Computer La Frite board and the same USB-stick boot flow, but uses:
+
+* the EFI boot path (U-Boot → UEFI stub → Linux) instead of extlinux
+* a Btrfs root filesystem instead of ext4
+* the composable defconfig structure under `configs/librecomputer/`
+* the libretech custom kernel (linux-6.1.y-lc) with full USB stack built-in
+
+The output image is `usb.img` (matching the lafrite guide); flash it to a USB stick and insert it into the **USB port furthest from the IR receiver** — same as described in the lafrite readme.
+
 ## configs
 
 defconfigs are organized into a tree structure based on board under configs.
 
 * configs
   * librecomputer
-    * aml-s905x-cc
+    * aml-s805x-ac
       * efi-btrfs_defconfig
 
 ```
-make librecomputer/aml-s905x-cc/efi-btrfs_defconfig
+make librecomputer/aml-s805x-ac/efi-btrfs_defconfig
 make
 ```
 
@@ -80,15 +91,15 @@ After a successful build (locally or via GitHub Actions), the image files are pl
 
 | File | Description |
 |------|-------------|
-| `sdcard.img` | **The only file you need.** Complete, ready-to-flash disk image. Flash this to a USB stick to run the system. |
-| `boot.vfat` | FAT32 boot partition image. Intermediate artifact embedded inside `sdcard.img`; no need to use it directly. |
-| `rootfs.btrfs` | Btrfs root filesystem image. Intermediate artifact embedded inside `sdcard.img`; no need to use it directly. |
-| `Image` | Compiled Linux kernel (AArch64). Stored inside `boot.vfat` → `sdcard.img` as `EFI/boot/BOOTAA64.EFI`. |
-| `boot.scr` | Compiled U-Boot boot script (binary form of `board/librecomputer/genimage/efi-btrfs/boot.cmd`). Stored inside `boot.vfat` → `sdcard.img`. |
-| `boot.ini` | U-Boot environment file that configures the boot method. Stored inside `boot.vfat` → `sdcard.img`. |
-| `<board-name>` | Board-specific bootloader binary downloaded from `boot.libre.computer`. Written directly into `sdcard.img` before the partition table at the correct sector offset for the board. |
+| `usb.img` | **The only file you need.** Complete, ready-to-flash disk image. Flash this to a USB stick to run the system. |
+| `boot.vfat` | FAT32 boot partition image. Intermediate artifact embedded inside `usb.img`; no need to use it directly. |
+| `rootfs.btrfs` | Btrfs root filesystem image. Intermediate artifact embedded inside `usb.img`; no need to use it directly. |
+| `Image` | Compiled Linux kernel (AArch64). Stored inside `boot.vfat` → `usb.img` as `EFI/boot/BOOTAA64.EFI`. |
+| `boot.scr` | Compiled U-Boot boot script (binary form of `board/librecomputer/genimage/efi-btrfs/boot.cmd`). Stored inside `boot.vfat` → `usb.img`. |
+| `boot.ini` | U-Boot environment file that configures the boot method. Stored inside `boot.vfat` → `usb.img`. |
+| `<board-name>` | Board-specific bootloader binary downloaded from `boot.libre.computer`. Written directly into `usb.img` before the partition table at the correct sector offset for the board. |
 
-The primary output is **`sdcard.img`** — a ready-to-flash disk image that contains:
+The primary output is **`usb.img`** — a ready-to-flash disk image that contains:
 
 * a bootloader partition (written before the partition table)
 * a FAT32 boot partition with the EFI stub, U-Boot script, and Linux kernel (`Image`)
@@ -98,7 +109,7 @@ The primary output is **`sdcard.img`** — a ready-to-flash disk image that cont
 
 1. Open the [Actions tab](../../actions/workflows/build.yml) and select the completed workflow run.
 2. Scroll to the **Artifacts** section at the bottom of the run summary.
-3. Download the **images** artifact and unzip it — you will find `sdcard.img` inside.
+3. Download the **images** artifact and unzip it — you will find `usb.img` inside.
 
 ### Flash to a USB stick
 
@@ -107,12 +118,12 @@ Replace `/dev/sdX` with the actual device node of your USB stick (check with `ls
 **Linux / macOS:**
 
 ```bash
-sudo dd if=sdcard.img of=/dev/sdX bs=4M conv=fsync status=progress
+sudo dd if=usb.img of=/dev/sdX bs=4M conv=fsync status=progress
 ```
 
 > **Warning:** double-check the target device before running `dd` — writing to the wrong device will destroy its data.
 
-**Windows:** use [balenaEtcher](https://etcher.balena.io/) or [Raspberry Pi Imager](https://www.raspberrypi.com/software/) and select `sdcard.img` as the source image.
+**Windows:** use [balenaEtcher](https://etcher.balena.io/) or [Raspberry Pi Imager](https://www.raspberrypi.com/software/) and select `usb.img` as the source image.
 
 ### Boot the board
 
