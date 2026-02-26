@@ -3,7 +3,9 @@ name: Build
 on:
   push:
     branches:
-      - '**'
+      - rebase
+      - main
+      - master
   pull_request:
   workflow_dispatch:
     inputs:
