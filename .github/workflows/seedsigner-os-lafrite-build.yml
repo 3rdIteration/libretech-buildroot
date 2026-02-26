@@ -1,4 +1,4 @@
-name: 'Build SeedSigner OS for La Frite'
+name: 'Build La Frite USB Image'
 
 on:
   push:
@@ -6,15 +6,6 @@ on:
       - '**'
   pull_request:
   workflow_dispatch:
-    inputs:
-      app_repo:
-        description: 'SeedSigner app repository URL'
-        required: false
-        default: 'https://github.com/3rdIteration/seedsigner'
-      app_branch:
-        description: 'SeedSigner app branch'
-        required: false
-        default: 'dev'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -22,65 +13,38 @@ concurrency:
 
 jobs:
   build:
-    name: Build SeedSigner OS for La Frite (AML-S805X-AC)
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-      - name: Checkout seedsigner-os repository
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          repository: 3rdIteration/seedsigner-os
-          ref: copilot/add-smartcard-dev-defconfig
-          submodules: recursive
 
-      - name: Free disk space
+      - name: Install build dependencies
         run: |
-          echo "Disk usage before cleanup:"
-          df -h
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libssl-dev \
+            bc \
+            cpio \
+            file \
+            rsync \
+            unzip \
+            wget \
+            libncurses-dev \
+            python3
 
-          sudo rm -rf \
-            /opt/hostedtoolcache/CodeQL \
-            /usr/local/lib/android/sdk \
-            /usr/share/dotnet
-          sudo apt-get clean
-          docker system prune --all --force || true
+      - name: Configure Buildroot for La Frite
+        run: make lafrite_defconfig
 
-          echo "Disk usage after cleanup:"
-          df -h
+      - name: Build USB flash drive image
+        run: make -j$(nproc)
+        timeout-minutes: 120
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Restore ccache
-        uses: actions/cache@v4
-        with:
-          path: .ccache
-          key: ccache-lafrite-smartcard-dev-${{ github.sha }}
-          restore-keys: |
-            ccache-lafrite-smartcard-dev-
-
-      - name: Create required directories
-        run: |
-          mkdir -p images
-          mkdir -p buildroot_dl
-
-      - name: Build SeedSigner OS for La Frite
-        env:
-          DOCKER_DEFAULT_PLATFORM: linux/amd64
-          SS_ARGS: >-
-            --lafrite
-            --smartcard
-            --dev
-            --app-repo=${{ inputs.app_repo || 'https://github.com/3rdIteration/seedsigner' }}
-            --app-branch=${{ inputs.app_branch || 'dev' }}
-        run: docker compose up --force-recreate --build --exit-code-from build-images
-
-      - name: Upload seedsigner-os La Frite image artifact
+      - name: Upload USB image artifact
         uses: actions/upload-artifact@v4
-        if: success()
         with:
-          name: seedsigner-os-lafrite-smartcard-dev
-          path: images/seedsigner_os.*.img
-          retention-days: 7
-          if-no-files-found: warn
+          name: lafrite-usb-image
+          path: output/images/usb.img
+          if-no-files-found: error
